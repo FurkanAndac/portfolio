@@ -15,6 +15,10 @@ export default function PortfolioGrid({ initialItems }: PortfolioGridProps) {
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set())
 
   const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this item?")) {
+      return
+    }
+
     try {
       await portfolioStore.deleteItem(id)
       setItems(items.filter((item) => item.id !== id))
@@ -79,23 +83,25 @@ export default function PortfolioGrid({ initialItems }: PortfolioGridProps) {
               </div>
             )}
 
-            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-              <a
-                href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-              >
-                <ExternalLink className="h-4 w-4" />
-                Visit
-              </a>
-              <button
-                onClick={() => handleDelete(item.id)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-destructive rounded-md hover:bg-destructive/90 transition-colors"
-              >
-                <Trash2 className="h-4 w-4 text-white" />
-                <span className="text-white">Delete</span>
-              </button>
+            <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent md:inset-0 md:bg-black/60 md:opacity-0 md:group-hover:opacity-100 md:transition-opacity md:flex md:items-center md:justify-center">
+              <div className="flex items-center justify-end gap-2 md:justify-center">
+                <a
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors touch-manipulation"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  <span>Visit</span>
+                </a>
+                <button
+                  onClick={() => handleDelete(item.id)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-destructive rounded-md hover:bg-destructive/90 transition-colors touch-manipulation"
+                >
+                  <Trash2 className="h-4 w-4 text-white" />
+                  <span className="text-white">Delete</span>
+                </button>
+              </div>
             </div>
           </div>
 
