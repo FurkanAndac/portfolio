@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { PortfolioItem } from "@/lib/types"
 import { portfolioStore } from "@/lib/portfolio-store"
 import { ExternalLink, Trash2, Globe } from "lucide-react"
@@ -13,6 +13,13 @@ export default function PortfolioGrid({ initialItems }: PortfolioGridProps) {
   const [items, setItems] = useState(initialItems)
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    console.log("[v0] Portfolio items:", items.length)
+    items.forEach((item) => {
+      console.log("[v0] Item:", item.id, "URL:", item.url)
+    })
+  }, [items])
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this item?")) {
@@ -29,14 +36,25 @@ export default function PortfolioGrid({ initialItems }: PortfolioGridProps) {
   }
 
   const getScreenshotUrl = (url: string) => {
-    return `/api/screenshot?url=${encodeURIComponent(url)}`
+    const screenshotUrl = `/api/screenshot?url=${encodeURIComponent(url)}`
+    console.log("[v0] Screenshot URL generated:", screenshotUrl)
+    return screenshotUrl
   }
 
-  const handleImageError = (itemId: string) => {
+  const handleImageError = (itemId: string, event: any) => {
+    console.log("[v0] Image ERROR for item:", itemId, "Event:", event)
     setFailedImages((prev) => new Set(prev).add(itemId))
   }
 
-  const handleImageLoad = (itemId: string) => {
+  const handleImageLoad = (itemId: string, event: any) => {
+    console.log(
+      "[v0] Image LOADED for item:",
+      itemId,
+      "naturalWidth:",
+      event.target?.naturalWidth,
+      "naturalHeight:",
+      event.target?.naturalHeight,
+    )
     setLoadedImages((prev) => new Set(prev).add(itemId))
   }
 
@@ -46,6 +64,8 @@ export default function PortfolioGrid({ initialItems }: PortfolioGridProps) {
         const isLoaded = loadedImages.has(item.id)
         const hasFailed = failedImages.has(item.id)
         const isLoading = !isLoaded && !hasFailed
+
+        console.log("[v0] Item state:", item.id, { isLoaded, hasFailed, isLoading })
 
         return (
           <div
@@ -59,8 +79,8 @@ export default function PortfolioGrid({ initialItems }: PortfolioGridProps) {
                 className={`w-full h-full object-cover object-top transition-opacity duration-300 ${
                   isLoaded ? "opacity-100" : "opacity-0"
                 }`}
-                onError={() => handleImageError(item.id)}
-                onLoad={() => handleImageLoad(item.id)}
+                onError={(e) => handleImageError(item.id, e)}
+                onLoad={(e) => handleImageLoad(item.id, e)}
               />
 
               {isLoading && (
