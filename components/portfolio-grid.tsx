@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import type { PortfolioItem } from "@/lib/types"
 import { portfolioStore } from "@/lib/portfolio-store"
 import { ExternalLink, Trash2, Globe } from "lucide-react"
@@ -13,6 +13,8 @@ export default function PortfolioGrid({ initialItems }: PortfolioGridProps) {
   const [items, setItems] = useState(initialItems)
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set())
+  const imageRefs = useRef<Map<string, HTMLImageElement>>(new Map())
+  const checkedImages = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     console.log("[v0] Portfolio items:", items.length)
@@ -36,27 +38,33 @@ export default function PortfolioGrid({ initialItems }: PortfolioGridProps) {
   }
 
   const getScreenshotUrl = (url: string) => {
-    const screenshotUrl = `/api/screenshot?url=${encodeURIComponent(url)}`
-    console.log("[v0] Screenshot URL generated:", screenshotUrl)
-    return screenshotUrl
+    return `/api/screenshot?url=${encodeURIComponent(url)}`
   }
 
-  const handleImageError = (itemId: string, event: any) => {
-    console.log("[v0] Image ERROR for item:", itemId, "Event:", event)
+  const handleImageError = (itemId: string) => {
+    console.log("[v0] Image ERROR for item:", itemId)
     setFailedImages((prev) => new Set(prev).add(itemId))
   }
 
-  const handleImageLoad = (itemId: string, event: any) => {
-    console.log(
-      "[v0] Image LOADED for item:",
-      itemId,
-      "naturalWidth:",
-      event.target?.naturalWidth,
-      "naturalHeight:",
-      event.target?.naturalHeight,
-    )
+  const handleImageLoad = (itemId: string) => {
+    console.log("[v0] Image LOADED for item:", itemId)
     setLoadedImages((prev) => new Set(prev).add(itemId))
   }
+
+  const checkImageLoaded = useCallback((itemId: string, img: HTMLImageElement | null) => {
+    if (!img || checkedImages.current.has(itemId)) return
+
+    checkedImages.current.add(itemId)
+
+    // If image is already loaded from cache, update state immediately
+    if (img.complete && img.naturalWidth > 0) {
+      console.log("[v0] Image already loaded from cache:", itemId)
+      setLoadedImages((prev) => new Set(prev).add(itemId))
+    } else if (img.complete && img.naturalWidth === 0) {
+      console.log("[v0] Image already failed:", itemId)
+      setFailedImages((prev) => new Set(prev).add(itemId))
+    }
+  }, [])
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -65,8 +73,6 @@ export default function PortfolioGrid({ initialItems }: PortfolioGridProps) {
         const hasFailed = failedImages.has(item.id)
         const isLoading = !isLoaded && !hasFailed
 
-        console.log("[v0] Item state:", item.id, { isLoaded, hasFailed, isLoading })
-
         return (
           <div
             key={item.id}
@@ -74,13 +80,14 @@ export default function PortfolioGrid({ initialItems }: PortfolioGridProps) {
           >
             <div className="aspect-video bg-muted relative overflow-hidden">
               <img
+                ref={(img) => checkImageLoaded(item.id, img)}
                 src={getScreenshotUrl(item.url) || "/placeholder.svg"}
                 alt={`Screenshot of ${item.title}`}
                 className={`w-full h-full object-cover object-top transition-opacity duration-300 ${
                   isLoaded ? "opacity-100" : "opacity-0"
                 }`}
-                onError={(e) => handleImageError(item.id, e)}
-                onLoad={(e) => handleImageLoad(item.id, e)}
+                onError={() => handleImageError(item.id)}
+                onLoad={() => handleImageLoad(item.id)}
               />
 
               {isLoading && (
