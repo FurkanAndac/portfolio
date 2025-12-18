@@ -33,12 +33,10 @@ export default function PortfolioGrid({ initialItems }: PortfolioGridProps) {
   }
 
   const handleImageError = (itemId: string) => {
-    console.log("[v0] Image failed to load:", itemId)
     setFailedImages((prev) => new Set(prev).add(itemId))
   }
 
   const handleImageLoad = (itemId: string) => {
-    console.log("[v0] Image loaded successfully:", itemId)
     setLoadedImages((prev) => new Set(prev).add(itemId))
   }
 
@@ -49,14 +47,22 @@ export default function PortfolioGrid({ initialItems }: PortfolioGridProps) {
         const hasFailed = failedImages.has(item.id)
         const isLoading = !isLoaded && !hasFailed
 
-        console.log("[v0] Item state:", { id: item.id, isLoaded, hasFailed, isLoading })
-
         return (
           <div
             key={item.id}
             className="group relative bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
           >
             <div className="aspect-video bg-muted relative overflow-hidden">
+              <img
+                src={getScreenshotUrl(item.url) || "/placeholder.svg"}
+                alt={`Screenshot of ${item.title}`}
+                className={`w-full h-full object-cover object-top transition-opacity duration-300 ${
+                  isLoaded ? "opacity-100" : "opacity-0"
+                }`}
+                onError={() => handleImageError(item.id)}
+                onLoad={() => handleImageLoad(item.id)}
+              />
+
               {isLoading && (
                 <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
                   <div className="animate-pulse">
@@ -73,24 +79,6 @@ export default function PortfolioGrid({ initialItems }: PortfolioGridProps) {
                   </p>
                   <p className="text-xs text-muted-foreground/60 mt-1">Preview unavailable</p>
                 </div>
-              )}
-
-              {isLoaded && (
-                <img
-                  src={getScreenshotUrl(item.url) || "/placeholder.svg"}
-                  alt={`Screenshot of ${item.title}`}
-                  className="w-full h-full object-cover object-top"
-                />
-              )}
-
-              {!isLoaded && !hasFailed && (
-                <img
-                  src={getScreenshotUrl(item.url) || "/placeholder.svg"}
-                  alt=""
-                  className="hidden"
-                  onError={() => handleImageError(item.id)}
-                  onLoad={() => handleImageLoad(item.id)}
-                />
               )}
 
               <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent md:inset-0 md:bg-black/60 md:opacity-0 md:group-hover:opacity-100 md:transition-opacity md:flex md:items-center md:justify-center">
