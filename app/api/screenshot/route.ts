@@ -24,7 +24,7 @@ export async function GET(request: Request) {
 
     return new Response(imageBuffer, {
       headers: {
-        "Content-Type": "image/png",
+        "Content-Type": "image/jpg",
         "Cache-Control": "public, max-age=86400",
       },
     })
